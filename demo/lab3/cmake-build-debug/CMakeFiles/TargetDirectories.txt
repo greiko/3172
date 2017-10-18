@@ -1,0 +1,3 @@
+/home/greiko/Documents/gitHub/inf3172/demo/lab3/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/greiko/Documents/gitHub/inf3172/demo/lab3/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/greiko/Documents/gitHub/inf3172/demo/lab3/cmake-build-debug/CMakeFiles/lab3.dir

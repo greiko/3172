@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/greiko/Documents/gitHub/inf3172/demo/lab3/main.c
+stdio.h
+-
+unistd.h
+-
+stdlib.h
+-
+errno.h
+-
+memory.h
+-
+wait.h
+-
+
