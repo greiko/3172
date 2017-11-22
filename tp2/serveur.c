@@ -24,21 +24,21 @@ int main() {
 
     mkfifo("serveurP", 0666);
 
-    char buffer[250];
+    char buffer[BUFSIZ];
     int count = 1;
     printf("%s> Serveur up\n%s",COLOR_CYAN,COLOR_WHITE); int i = 0;
-    fdREad = open(pipeSrc, O_RDONLY);
 
     while (1) {
-        printf("%s> Connection established - Request number : %d\n%s",COLOR_CYAN, count,COLOR_WHITE);
-        count++;
-        read(fdREad, buffer, 250);
+        fdREad = open(pipeSrc, O_RDONLY);
 
+        printf("%s> Connection established - Request number : %d\n%s",COLOR_CYAN, count,COLOR_WHITE);
+        read(fdREad, buffer, BUFSIZ);
+        close(fdREad);
         printf("%s\n", buffer);
 
 
-        char nomPipe[250];
-        char commande[250];
+        char nomPipe[BUFSIZ];
+        char commande[BUFSIZ];
         int pipeNameDone = -1;
         int i, j;
         for (i = 0, j = 0; i < strlen(buffer); i++) {
@@ -71,6 +71,8 @@ int main() {
             printf("Jai recu la commande et cest %s\n",commande);
             write(fdWrite,message,strlen(message) + 1);
         }
+        count++;
+
     }
 
     return 0;

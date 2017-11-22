@@ -7,6 +7,8 @@
 #include <wait.h>
 
 #define COLOR_YELLOW  "\x1B[33m"
+#define COLOR_CYAN    "\x1b[36m"
+
 #define COLOR_WHITE  "\x1B[37m"
 
 char *concat(const char *, const char *);
@@ -21,8 +23,8 @@ int main() {
     char *pipeSrc = "pipe";
 
 
-    char buffer[250];
-    char buffer2[250];
+    char buffer[BUFSIZ];
+    char buffer2[BUFSIZ];
 
     int numeroRequete = 1;
 
@@ -34,10 +36,10 @@ int main() {
         pipeName = concat(pipeSrc, indexString);
 
         if (access(pipeName, F_OK) == -1) {
-            printf("Pipe non existant\n");
+//            printf("Pipe non existant\n");
             break;
         } else {
-            printf("Pipe existant\n");
+//            printf("Pipe existant\n");
             index++;
         }
     }
@@ -45,28 +47,33 @@ int main() {
 
 
     while (1) {
+        if (numeroRequete >= 100){
+            printf("%s> MAXIMUM DE REQUETE ATTEINT\n");
+            exit(0);
+        }
         if (access(serveurSrc, F_OK) == -1) {
-            printf("Serveur fermer\n");
+            printf("%s> Serveur Fermer\n%s",COLOR_CYAN,COLOR_WHITE);
             exit(0);
         } else {
-            printf("Connection serveur established\n");
+            printf("%s> Connection server established\n%s",COLOR_CYAN,COLOR_WHITE);
         }
 
         mkfifo(pipeName, 0666);
 
 
-        printf("Numero requete : %d\n",numeroRequete);
+        printf("%s> Numero requete : %d\n%s",COLOR_CYAN,numeroRequete,COLOR_WHITE);
         printf("Ecrire commande: \n");
-        fgets(buffer, 250, stdin);
+        fgets(buffer, BUFSIZ, stdin);
 
-        if (strcmp(buffer,"\n") == 0){
-            remove(pipeName);
-            exit(0);
-        } else if (strcmp(buffer,"fin\n") == 0){
-            printf("Vous avez envoye la commande de fin de serveur");
+        if (strcmp(buffer,"\n") == 0) {
             remove(pipeName);
             exit(0);
         }
+//        } else if (strcmp(buffer,"fin\n") == 0){
+//            printf("Vous avez envoye la commande de fin de serveur");
+//            remove(pipeName);
+//            exit(0);
+//        }
 
         if (access(serveurSrc, F_OK) == -1) {
             printf("Serveur fermer pendant votre input\n");
@@ -80,23 +87,22 @@ int main() {
         char *message = concat(pipeName, ",");
 
 
-        char temp[250];
+        char temp[BUFSIZ];
         strcpy(temp, message);
 
-        char bufferToSend[250];
+        char bufferToSend[BUFSIZ];
         char *temp2 = concat(temp, buffer);
 
         stpcpy(bufferToSend, temp2);
 
         write(fileDescriptor, bufferToSend, strlen(bufferToSend) + 1);
         close(fileDescriptor);
-        sleep(1);
         numeroRequete++;
 
 
         while (1) {
             fileDescriptor = open(pipeName, O_RDONLY);
-            read(fileDescriptor, buffer2, 250);
+            read(fileDescriptor, buffer2, BUFSIZ);
 
             printf("%s\n", buffer2);
 
