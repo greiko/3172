@@ -7,9 +7,20 @@
 #include <wait.h>
 
 #define COLOR_YELLOW  "\x1B[33m"
-#define COLOR_CYAN    "\x1b[36m"
+#define COLOR_GREEN  "\x1B[32m"
+#define COLOR_RED     "\x1b[31m"
+
+#define CLEAR "\e[H\e[2J"
 
 #define COLOR_WHITE  "\x1B[37m"
+
+#define COMMANDE_FIN_SERVEUR "> VOUS AVEZ ENVOYE LA COMMANDE DE FERMETURE DE SERVEUR"
+#define MAXIMUM_REQUETE_ATTEINTE "> MAXIMUM DE REQUETES ATTEINTE"
+#define SERVEUR_FERMER "> SERVEUR FERMER"
+#define CONNECTION_ETABLI "> CONNECTION ETABLI AVEC LE SERVEUR"
+#define NUMERO_REQUETE "> NUMERO DE REQUETE : "
+#define ECRIRE_COMMANDE "> ECRIRE VOTRE COMMANDE : "
+#define SERVEUR_FERMER_PENDANT_INPUT "> SERVEUR FERMER PENDANT VOTRE L'ATTENTE DE SAISI DE COMMANDE"
 
 char *concat(const char *, const char *);
 
@@ -44,41 +55,40 @@ int main() {
         }
     }
 
+    printf("\\033[41m%s",CLEAR);
 
 
     while (1) {
         if (numeroRequete >= 100){
-            printf("%s> MAXIMUM DE REQUETE ATTEINT\n");
+            printf("%s%s\n",COLOR_GREEN,MAXIMUM_REQUETE_ATTEINTE);
             exit(0);
         }
         if (access(serveurSrc, F_OK) == -1) {
-            printf("%s> Serveur Fermer\n%s",COLOR_CYAN,COLOR_WHITE);
+            printf("%s%s\n%s",COLOR_RED,SERVEUR_FERMER,COLOR_WHITE);
             exit(0);
         } else {
-            printf("%s> Connection server established\n%s",COLOR_CYAN,COLOR_WHITE);
+            printf("%s%s\n%s",COLOR_GREEN,CONNECTION_ETABLI,COLOR_WHITE);
         }
 
         mkfifo(pipeName, 0666);
 
 
-        printf("%s> Numero requete : %d\n%s",COLOR_CYAN,numeroRequete,COLOR_WHITE);
-        printf("Ecrire commande: \n");
+        printf("%s%s%d\n%s",COLOR_GREEN,NUMERO_REQUETE,numeroRequete,COLOR_WHITE);
+        printf("%s",ECRIRE_COMMANDE);
         fgets(buffer, BUFSIZ, stdin);
+        printf("\n");
 
         if (strcmp(buffer,"\n") == 0) {
             remove(pipeName);
             exit(0);
         }
-//        } else if (strcmp(buffer,"fin\n") == 0){
-//            printf("Vous avez envoye la commande de fin de serveur");
-//            remove(pipeName);
-//            exit(0);
-//        }
 
         if (access(serveurSrc, F_OK) == -1) {
-            printf("Serveur fermer pendant votre input\n");
+            printf("%s%s%s\n",COLOR_RED,SERVEUR_FERMER_PENDANT_INPUT,COLOR_WHITE);
+            remove(pipeName);
             exit(0);
         }
+
 
         fileDescriptor = open(serveurSrc, O_WRONLY);
 
@@ -99,12 +109,24 @@ int main() {
         close(fileDescriptor);
         numeroRequete++;
 
+        if (strcmp(buffer,"fin\n") == 0){
+            printf("%s%s%s\n",COLOR_GREEN,COMMANDE_FIN_SERVEUR,COLOR_WHITE);
+            remove(pipeName);
+            exit(0);
+        }
+
 
         while (1) {
             fileDescriptor = open(pipeName, O_RDONLY);
             read(fileDescriptor, buffer2, BUFSIZ);
 
-            printf("%s\n", buffer2);
+            printf("%s====================================================\n", COLOR_YELLOW);
+            printf("\tRESULTAT\n", COLOR_YELLOW);
+            printf("%s====================================================%s\n", COLOR_YELLOW, COLOR_GREEN);
+            printf("%s\n" ,buffer2);
+            printf("%s====================================================\n", COLOR_YELLOW);
+            printf("\tFIN RESULTAT\n", COLOR_YELLOW);
+            printf("%s====================================================\n%s", COLOR_YELLOW, COLOR_WHITE);
 
             close(fileDescriptor);
             break;
