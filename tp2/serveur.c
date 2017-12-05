@@ -5,147 +5,143 @@
 #include <string.h>
 #include <stdio.h>
 
-#define COLOR_YELLOW  "\x1B[33m"
-#define COLOR_WHITE  "\x1B[37m"
-#define COLOR_GREEN  "\x1B[32m"
+#define COLOR_YELLOW            "\x1B[33m"
+#define COLOR_WHITE             "\x1B[37m"
+#define COLOR_GREEN             "\x1B[32m"
+#define COLOR_RED               "\x1b[31m"
 
-#define CLEAR "\e[H\e[2J"
+#define CLEAR                   "\e[H\e[2J"
 
-#define COLOR_RED     "\x1b[31m"
-#define COLOR_BLUE    "\x1b[34m"
-#define COLOR_MAGENTA "\x1b[35m"
-#define COLOR_CYAN    "\x1b[36m"
+#define SERVER_UP               "> SERVEUR UP"
+#define COMMAND_NO_VALID        "\x1b[31mCOMMANDE NON VALIDE"
+#define CONNECTION_ESTABLISHED  "> CONNECTION ETABLI - NUMERO DE REQUETE : "
+#define PIPE_NAME               "> NOM DE PIPE : "
+#define COMMAND_RECEIVED        "> COMMANDE RECU : "
+#define SERVER_CLOSING          "> FERMETURE DU SERVEUR"
 
-#define SERVEUR_UP "> SERVEUR UP"
-#define COMMANDE_NON_VALIDE "\x1b[31mCOMMANDE NON VALIDE"
-#define CONNECTION_ETABLI "> CONNECTION ETABLI - NUMERO DE REQUETE : "
-#define NOM_PIPE "> NOM DE PIPE : "
-#define COMMANDE_RECU "> COMMANDE RECU : "
-#define FERMETURE_SERVEUR "> FERMETURE DU SERVEUR"
+#define PIPE_SERVER_SRC                "serveurP"
+#define LOG_SRC                 "log.txt"
+
+int checkCD(char *commande);
+
+void printLogFile();
 
 
 int main() {
 
 
-    int fdREad;
-    int fdWrite;
-
-    char *pipeSrc = "serveurP";
-    char *logSrc = "log.txt";
-
-    FILE *logFile = fopen(logSrc, "w");
-
-    mkfifo("serveurP", 0666);
-
-    printf("\\033[41m%s", CLEAR);
-
-
+    int fdServerRead;
+    int fdServerWrite;
     char buffer[BUFSIZ];
     int count = 1;
+    int pcloseStatus = 0;
 
 
-    fprintf(logFile, "%s%s\n%s", COLOR_GREEN, SERVEUR_UP, COLOR_WHITE);
-    printf("%s%s\n%s", COLOR_GREEN, SERVEUR_UP, COLOR_WHITE);
+    FILE *logFile = fopen(LOG_SRC, "w");
+    mkfifo("serveurP", 0666);
+    printf("\\033[41m%s", CLEAR); // Clear ton terminal pour un beau visuel
+
+    fprintf(logFile, "%s%s\n%s", COLOR_GREEN, SERVER_UP, COLOR_WHITE);
+    printf("%s%s\n%s", COLOR_GREEN, SERVER_UP, COLOR_WHITE);
 
     while (1) {
-        fdREad = open(pipeSrc, O_RDONLY);
+        fdServerRead = open(PIPE_SERVER_SRC, O_RDONLY);
 
 
-        printf("%s%s%d\n%s", COLOR_GREEN, CONNECTION_ETABLI, count, COLOR_WHITE);
+        printf("%s%s%d\n%s", COLOR_GREEN, CONNECTION_ESTABLISHED, count, COLOR_WHITE);
 
-        fprintf(logFile,"%s==========================================================================================================\n", COLOR_YELLOW);
-        fprintf(logFile,"%s%s%d\n%s", COLOR_GREEN, CONNECTION_ETABLI, count, COLOR_WHITE);
-        fprintf(logFile,"%s==========================================================================================================\n", COLOR_YELLOW, COLOR_GREEN);
+        fprintf(logFile,
+                "%s==========================================================================================================\n",
+                COLOR_YELLOW);
+        fprintf(logFile, "%s%s%d\n%s", COLOR_GREEN, CONNECTION_ESTABLISHED, count, COLOR_WHITE);
+        fprintf(logFile,
+                "%s==========================================================================================================\n",
+                COLOR_YELLOW);
 
-        read(fdREad, buffer, BUFSIZ);
-        close(fdREad);
+        read(fdServerRead, buffer, BUFSIZ);
+        close(fdServerRead);
 
-        char nomPipe[BUFSIZ];
-        char commande[BUFSIZ];
+        char pipeNameClient[BUFSIZ];
+        char command[BUFSIZ];
         int pipeNameDone = -1;
         int i, j;
         for (i = 0, j = 0; i < strlen(buffer); i++) {
             if (buffer[i] == ',') {
-                nomPipe[j + 1] = '\0';
+                pipeNameClient[j + 1] = '\0';
                 j = 0;
                 pipeNameDone = 0;
             } else {
                 if (pipeNameDone == 0) {
-                    commande[j] = buffer[i];
+                    command[j] = buffer[i];
 
                 } else {
-                    nomPipe[j] = buffer[i];
+                    pipeNameClient[j] = buffer[i];
 
                 }
                 j++;
             }
         }
-        commande[j] = '\0';
-//        printf("%s%s%s\n%s", COLOR_GREEN, NOM_PIPE, nomPipe, COLOR_WHITE);
-//        printf("%s%s%s\n%s", COLOR_GREEN, COMMANDE_RECU,commande, COLOR_WHITE);
+        command[j] = '\0';
 
+        fprintf(logFile, "%s%s%s\n%s", COLOR_GREEN, PIPE_NAME, pipeNameClient, COLOR_WHITE);
+        fprintf(logFile, "%s%s%s\n%s", COLOR_GREEN, COMMAND_RECEIVED, command, COLOR_WHITE);
 
-        fprintf(logFile, "%s%s%s\n%s", COLOR_GREEN, NOM_PIPE, nomPipe, COLOR_WHITE);
-        fprintf(logFile, "%s%s%s\n%s", COLOR_GREEN, COMMANDE_RECU, commande, COLOR_WHITE);
-
-        if (strcmp(commande, "fin\n") == 0) {
-            printf("%s%s\n\n\n\n%s", COLOR_GREEN, FERMETURE_SERVEUR, COLOR_WHITE);
-            fprintf(logFile, "%s%s\n%s", COLOR_GREEN, FERMETURE_SERVEUR, COLOR_WHITE);
-            remove(pipeSrc);
+        if (strcmp(command, "fin\n") == 0 || strcmp(command, "FIN\n") == 0) {
+            printf("%s%s\n\n\n\n%s", COLOR_GREEN, SERVER_CLOSING, COLOR_WHITE);
+            fprintf(logFile, "%s%s\n%s", COLOR_GREEN, SERVER_CLOSING, COLOR_WHITE);
+            remove(PIPE_SERVER_SRC);
             sleep(1);
-            close(fdREad);
+            close(fdServerRead);
             fclose(logFile);
 
-            int c;
-            FILE *file;
-            file = fopen(logSrc, "r");
-            if (file) {
-                while ((c = getc(file)) != EOF)
-                    putchar(c);
-                fclose(file);
-            }
+            printLogFile();
+
             exit(0);
-        }
-
-        char buffer[BUFSIZ];
-        for (i = 0; i < BUFSIZ; i++) {
-            buffer[i] = '\0';
-        }
-        FILE *commandeFile = popen(commande, "r");
-        fread(buffer, BUFSIZ, sizeof(commandeFile), commandeFile);
-
-        int pcloseStatus = pclose(commandeFile);
-
-
-        fdWrite = open(nomPipe, O_WRONLY);
-        if (pcloseStatus == 32512) {
-            strcpy(buffer, COMMANDE_NON_VALIDE);
+        } else if (checkCD(command) == 0) {
+            system("gnome-terminal -e vi");
         } else {
-//                printf("%s====================================================\n", COLOR_YELLOW);
-//                printf("\tRESULTAT\n", COLOR_YELLOW);
-//                printf("%s====================================================%s\n", COLOR_YELLOW, COLOR_GREEN);
-//                printf("%s\n" ,buffer);
-//                printf("%s====================================================\n", COLOR_YELLOW);
-//                printf("\tFIN RESULTAT\n", COLOR_YELLOW);
-//                printf("%s====================================================\n%s", COLOR_YELLOW, COLOR_WHITE);
+            for (i = 0; i < BUFSIZ; i++) {
+                buffer[i] = '\0';
+            }
+            FILE *commandeFile = popen(command, "r");
+            fread(buffer, BUFSIZ, sizeof(commandeFile), commandeFile);
+            pcloseStatus = pclose(commandeFile);
 
+
+        }
+
+
+        fdServerWrite = open(pipeNameClient, O_WRONLY);
+        if (pcloseStatus == 32512) {
+            strcpy(buffer, COMMAND_NO_VALID);
+        } else {
             fprintf(logFile, "%s====================================================\n", COLOR_YELLOW);
             fprintf(logFile, "\tRESULTAT\n");
             fprintf(logFile, "%s====================================================%s\n", COLOR_YELLOW, COLOR_GREEN);
             fprintf(logFile, "%s\n", buffer);
         }
-        write(fdWrite, buffer, strlen(buffer) + 1);
-
+        write(fdServerWrite, buffer, strlen(buffer) + 1);
         count++;
-
-
-
-        fprintf(logFile,"%s===========================================================================\n", COLOR_YELLOW);
-        fprintf(logFile,"\tFIN DE REQUETE\n", COLOR_YELLOW);
-        fprintf(logFile,"%s===========================================================================\n", COLOR_YELLOW, COLOR_GREEN);
 
     }
 
     return 0;
 }
 
+void printLogFile() {
+    int c;
+    FILE *file;
+    file = fopen(LOG_SRC, "r");
+    if (file) {
+        while ((c = getc(file)) != EOF)
+            putchar(c);
+        fclose(file);
+    }
+}
+
+int checkCD(char *commande) {
+    if (commande[0] == 'v' && commande[1] == 'i') {
+        return 0;
+    }
+    return -1;
+}
