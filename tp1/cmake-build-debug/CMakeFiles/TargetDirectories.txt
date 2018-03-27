@@ -1,3 +1,0 @@
-/home/greiko/Documents/gitHub/inf3172/tp1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/greiko/Documents/gitHub/inf3172/tp1/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/greiko/Documents/gitHub/inf3172/tp1/cmake-build-debug/CMakeFiles/tp1.dir
